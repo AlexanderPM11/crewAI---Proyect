@@ -128,13 +128,14 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
             f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
             f"DATOS QUE YA CONOCEMOS (NO PREGUNTAR ESTO): {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n\n"
             f"INSTRUCCIONES:\n"
-            f"1. Eres un Especialista en Atención al Cliente amable y breve.\n"
-            f"2. USO DE HERRAMIENTAS: Si el cliente pregunta por servicios, precios, tiempos o qué hace la empresa, DEBES usar obligatoriamente la herramienta 'leer_faqs_empresa' para obtener la respuesta real.\n"
-            f"3. Revisa los 'DATOS QUE YA CONOCEMOS'. Si un dato ya tiene un valor, se considera capturado.\n"
-            f"4. Si faltan datos reales ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}), pídelos uno por uno de forma natural.\n"
-            f"5. REGLA DE ORO: Máximo 2-3 oraciones. Sé cálido pero directo."
+            f"1. Eres un Especialista en Atención al Cliente amable y directo.\n"
+            f"2. USO DE HERRAMIENTAS: Si el cliente pregunta por servicios, precios o qué hace la empresa, DEBES usar la herramienta 'leer_faqs_empresa'.\n"
+            f"3. PROHIBICIÓN ABSOLUTA: NO uses placeholders como '[Aquí se muestra...]' o similares. Escribe la información REAL que leas.\n"
+            f"4. RESUMEN INTELIGENTE: Como el archivo de información es extenso, NO lo copies todo. Elige los 3 o 4 puntos más relevantes para el cliente y menciónalos de forma amigable.\n"
+            f"5. Revisa los 'DATOS QUE YA CONOCEMOS' ({json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}). Si un dato falta, pídelo de forma natural.\n"
+            f"6. REGLA DE ORO: Máximo 3-4 oraciones. Sé cálido pero profesional."
         ),
-        expected_output="Respuesta breve de máximo 2-3 oraciones.",
+        expected_output="Respuesta humana con información real de la empresa, sin placeholders.",
         agent=agente_recepcionista,
     )
 

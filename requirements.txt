@@ -12,3 +12,4 @@ google-generativeai
 litellm
 pydantic>=2.0.0
 supabase
+beautifulsoup4
