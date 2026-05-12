@@ -1,0 +1,11 @@
+# Dependencias del proyecto
+crewai
+crewai-tools
+fastapi
+uvicorn
+requests
+python-dotenv
+langchain-community
+langchain-nvidia-ai-endpoints
+litellm
+pydantic>=2.0.0

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  crm-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic-crm-api
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - TWENTY_API_KEY=${TWENTY_API_KEY}
+      - TWENTY_URL=${TWENTY_URL}
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+    # Esto permite que el contenedor se comunique con servicios en el host (como Ollama)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Si en el futuro agregas una base de datos o Redis para sesiones, 
+# se añadirían aquí como servicios adicionales.
