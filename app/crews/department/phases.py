@@ -126,16 +126,14 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
         description=(
             f"Historial de Chat:\n{contexto_chat}\n\n"
             f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
-            f"DATOS QUE YA CONOCEMOS (NO PREGUNTAR ESTO): {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n\n"
+            f"DATOS QUE YA CONOCEMOS: {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n\n"
             f"INSTRUCCIONES:\n"
-            f"1. Eres un Especialista en Atención al Cliente amable y directo.\n"
-            f"2. USO DE HERRAMIENTAS: Si el cliente pregunta por servicios, precios o qué hace la empresa, DEBES usar la herramienta 'leer_faqs_empresa'.\n"
-            f"3. PROHIBICIÓN ABSOLUTA: NO uses placeholders como '[Aquí se muestra...]' o similares. Escribe la información REAL que leas.\n"
-            f"4. RESUMEN INTELIGENTE: Como el archivo de información es extenso, NO lo copies todo. Elige los 3 o 4 puntos más relevantes para el cliente y menciónalos de forma amigable.\n"
-            f"5. Revisa los 'DATOS QUE YA CONOCEMOS' ({json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}). Si un dato falta, pídelo de forma natural.\n"
-            f"6. REGLA DE ORO: Máximo 3-4 oraciones. Sé cálido pero profesional."
+            f"1. Eres un Especialista en Atención al Cliente y Captación de Leads.\n"
+            f"2. RESPUESTA HÍBRIDA: Resuelve la duda técnica o de servicios usando la herramienta 'leer_faqs_empresa'.\n"
+            f"3. CAPTACIÓN ACTIVA: Inmediatamente después de informar, pide UN solo dato de los que faltan ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}) para poder agendar su proyecto. Ejemplo: 'Por cierto, ¿cuál sería el presupuesto estimado?'\n"
+            f"4. REGLA DE ORO: Máximo 3-4 oraciones. Sé cálido, profesional y enfocado en avanzar el proceso."
         ),
-        expected_output="Respuesta humana con información real de la empresa, sin placeholders.",
+        expected_output="Respuesta humana que informa y solicita un dato para el CRM.",
         agent=agente_recepcionista,
     )
 
