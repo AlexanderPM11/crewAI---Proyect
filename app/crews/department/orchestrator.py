@@ -2,6 +2,7 @@ from app.agents.crm_agents import AgentesDepartamentoCRM
 from app.tasks.crm_tasks import TareasDepartamentoCRM
 from app.crews.department.constants import PALABRAS_CANCELAR
 from app.crews.department.phases import procesar_pipeline_agente
+from app.core.datos_requeridos import extraer_datos_del_mensaje
 
 class DepartamentoCRMCrew:
     ESTADO_IDLE = "IDLE"
@@ -15,6 +16,19 @@ class DepartamentoCRMCrew:
         self.datos_acumulados = {}
         self.estado = self.ESTADO_IDLE
         self.datos_faltantes_actuales = []
+        
+        # Reconstruir memoria si hay historial previo
+        if self.historial_chat:
+            self._reconstruir_memoria()
+
+    def _reconstruir_memoria(self):
+        """Extrae datos estructurados del historial completo para pre-llenar la memoria."""
+        print(f"[MEMORY] Reconstruyendo memoria desde historial ({len(self.historial_chat)} mensajes)...")
+        texto_completo = "\n".join(self.historial_chat)
+        datos_extraidos = extraer_datos_del_mensaje(texto_completo)
+        if datos_extraidos:
+            print(f"[MEMORY] Datos recuperados: {datos_extraidos}")
+            self.datos_acumulados.update(datos_extraidos)
 
     def _detectar_cancelacion(self, mensaje: str) -> bool:
         msg_lower = mensaje.lower().strip()
