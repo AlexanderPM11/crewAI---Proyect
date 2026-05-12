@@ -53,6 +53,21 @@ class AgentesDepartamentoCRM:
             allow_delegation=False
         )
 
+    def agente_estratega(self):
+        return Agent(
+            role='Estratega Jefe de Operaciones CRM',
+            goal='Analizar la conversación y determinar la mejor estrategia para ayudar al cliente, optimizando el uso del CRM.',
+            backstory=(
+                'Eres el cerebro táctico del departamento. Tu especialidad es leer entre líneas. '
+                'No solo clasificas, sino que entiendes en qué punto de la relación con el cliente nos encontramos. '
+                'Decides si tenemos información suficiente para actuar o si debemos ser empáticos y pedir más datos antes de tocar el CRM. '
+                'Tu salida siempre es una decisión estratégica basada en la eficiencia y la satisfacción del cliente.'
+            ),
+            llm=self.llm,
+            verbose=True,
+            allow_delegation=False
+        )
+
     def agente_gestor_personas(self):
         return Agent(
             role='Especialista en Atención al Cliente',

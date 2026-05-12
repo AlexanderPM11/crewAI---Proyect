@@ -36,7 +36,7 @@ openai_llm = LLM(
 gemini_model = os.getenv("GEMINI_MODEL", "gemini/gemini-1.5-flash")
 gemini_llm = LLM(
     model=gemini_model,
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=os.getenv("GEMINI_API_KEY"),
 )
 
 # ==========================================
