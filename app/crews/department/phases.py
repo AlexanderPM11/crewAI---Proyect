@@ -124,11 +124,15 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
 
     tarea_respuesta = Task(
         description=(
-            f"Historial: {contexto_chat}\n"
-            f"Mensaje: '{mensaje_usuario}'.\n"
-            f"Reporte CRM: '{reporte_backoffice}'.{resumen_datos}\n\n"
-            f"REGLAS: Brevedad (2-3 oraciones), No IDs técnicos, No digas 'FAQ'.{instruccion_datos_faltantes}"
-            f"{'' if datos_faltantes else chr(10) + '7. CIERRE: Siempre termina con una pregunta abierta.'}"
+            f"Historial de Chat:\n{contexto_chat}\n\n"
+            f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
+            f"DATOS QUE YA CONOCEMOS (NO PREGUNTAR ESTO): {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n\n"
+            f"INSTRUCCIONES:\n"
+            f"1. Eres un Especialista en Atención al Cliente amable y breve.\n"
+            f"2. Revisa los 'DATOS QUE YA CONOCEMOS'. Si un dato ya tiene un valor, se considera capturado.\n"
+            f"3. Si faltan datos reales ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}), pídelos uno por uno de forma natural.\n"
+            f"4. Si el cliente dijo 'por definir' o similar, NO vuelvas a preguntar por ese campo en este turno.\n"
+            f"5. REGLA DE ORO: Máximo 2-3 oraciones. Sé cálido pero directo."
         ),
         expected_output="Respuesta breve de máximo 2-3 oraciones.",
         agent=agente_recepcionista,

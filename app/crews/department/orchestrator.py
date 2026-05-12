@@ -23,12 +23,19 @@ class DepartamentoCRMCrew:
 
     def _reconstruir_memoria(self):
         """Extrae datos estructurados del historial completo para pre-llenar la memoria."""
-        print(f"[MEMORY] Reconstruyendo memoria desde historial ({len(self.historial_chat)} mensajes)...")
+        print(f"\n[MEMORY] 🧠 Analizando historial para reconstruir memoria estructurada...")
         texto_completo = "\n".join(self.historial_chat)
+        
+        # Intentamos extraer datos del historial completo
         datos_extraidos = extraer_datos_del_mensaje(texto_completo)
+        
         if datos_extraidos:
-            print(f"[MEMORY] Datos recuperados: {datos_extraidos}")
-            self.datos_acumulados.update(datos_extraidos)
+            # Limpiar datos que sean simplemente placeholders
+            datos_limpios = {k: v for k, v in datos_extraidos.items() if str(v).lower() not in ["null", "none", "por definir", "aún por definir"]}
+            print(f"[MEMORY] ✅ Datos recuperados del historial: {datos_limpios}")
+            self.datos_acumulados.update(datos_limpios)
+        else:
+            print(f"[MEMORY] ℹ️ No se encontraron datos estructurados en el historial.")
 
     def _detectar_cancelacion(self, mensaje: str) -> bool:
         msg_lower = mensaje.lower().strip()

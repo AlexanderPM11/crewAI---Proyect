@@ -58,12 +58,14 @@ def _extraer_con_regex(texto: str) -> dict:
     if match_email:
         datos["email"] = match_email.group(0)
 
-    # Teléfono (formatos: +18095551234, 809-555-1234, (809) 555 1234, etc.)
-    match_tel = re.search(r'(?:\+?\d{1,3}[\s\-]?)?\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}', texto)
+    # Teléfono (formatos: +18095551234, 809-555-1234, (809) 555 1234, 8099160688, etc.)
+    match_tel = re.search(r'(\+?\d{1,3}[\s\-]?)?\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}', texto)
     if match_tel:
-        # Limpiar a solo dígitos y +
         raw = match_tel.group(0)
         limpio = re.sub(r'[^\d+]', '', raw)
+        # Si tiene 10 dígitos y no tiene +, asumimos RD/US (+1)
+        if len(limpio) == 10 and not limpio.startswith('+'):
+            limpio = '+1' + limpio
         datos["telefono"] = limpio
 
     return datos
@@ -130,7 +132,8 @@ def _extraer_con_llm(texto: str, agente_enrutador) -> dict:
         # Filtrar nulls y strings vacíos
         datos = {}
         for k, v in datos_raw.items():
-            if v is not None and str(v).lower() not in ["null", "none", "", "desconocido", "n/a"]:
+            val_str = str(v).lower().strip()
+            if v is not None and val_str not in ["null", "none", "", "desconocido", "n/a", "undefined"]:
                 datos[k] = str(v)
         return datos
     except (json.JSONDecodeError, AttributeError):
