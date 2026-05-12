@@ -25,6 +25,36 @@ class TareasDepartamentoCRM:
             expected_output="Una respuesta amable y profesional en primera persona confirmando todas las acciones realizadas en el CRM.",
         )
 
+    def tarea_analisis_estrategico(self, agente, mensaje_usuario: str, contexto_chat: str, datos_acumulados: dict):
+        return Task(
+            description=(
+                f"Analiza la situación actual de esta conversación:\n"
+                f"--- HISTORIAL RECIENTE ---\n{contexto_chat}\n\n"
+                f"--- ÚLTIMO MENSAJE ---\n'{mensaje_usuario}'\n\n"
+                f"--- DATOS QUE YA TENEMOS ---\n{json.dumps(datos_acumulados, ensure_ascii=False)}\n\n"
+                f"TU MISIÓN:\n"
+                f"1. Identifica la intención: ¿Qué quiere el cliente exactamente?\n"
+                f"2. Extrae TODOS los datos posibles: Si el cliente mencionó algo en su ÚLTIMO mensaje, extráelo al campo 'datos_nuevos'.\n"
+                f"   CAMPOS VÁLIDOS: 'nombre_persona', 'apellido', 'email', 'telefono', 'nombre_empresa', 'dominio_web', 'nombre_proyecto', 'presupuesto', 'descripcion_problema'.\n"
+                f"3. Determina acciones CRM: ¿Qué operaciones (CREAR/MODIFICAR) se necesitarán eventualmente? Ej: 'PERSONA_CREAR', 'OPORTUNIDAD_CREAR'.\n"
+                f"4. Evalúa completitud: ¿Tenemos los datos mínimos para ejecutar esas acciones YA MISMO?\n"
+                f"5. Toma una decisión estratégica: \n"
+                f"   - 'EJECUTAR': Tenemos TODO lo necesario para actuar en el CRM ahora.\n"
+                f"   - 'PEDIR_DATOS': Faltan datos críticos para completar las acciones.\n"
+                f"   - 'RESPONDER': Es una consulta general, saludo, o no requiere CRM aún.\n\n"
+                f"RESPONDE ÚNICAMENTE CON ESTE FORMATO JSON:\n"
+                f"{{\n"
+                f"  \"intencion\": \"resumen breve\",\n"
+                f"  \"acciones_crm\": [\"ACCION_1\", \"ACCION_2\"],\n"
+                f"  \"datos_nuevos\": {{\"campo\": \"valor\"}},\n"
+                f"  \"datos_faltantes\": [\"lo que falta\"],\n"
+                f"  \"decision\": \"EJECUTAR | PEDIR_DATOS | RESPONDER\"\n"
+                f"}}"
+            ),
+            expected_output="Un JSON estructurado con la estrategia a seguir.",
+            agent=agente
+        )
+
     def tarea_enrutamiento(self, agente, mensaje_usuario: str):
         return Task(
             description=f"Analiza la intención principal de este mensaje: '{mensaje_usuario}'...",
