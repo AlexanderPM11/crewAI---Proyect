@@ -7,7 +7,7 @@ def leer_faqs_empresa() -> str:
     ÚSALA SIEMPRE QUE EL CLIENTE PREGUNTE POR PRECIOS, SERVICIOS, TIEMPOS O QUÉ HACEMOS.
     Esta herramienta lee el documento oficial de Preguntas Frecuentes de la empresa.
     """
-    ruta_archivo = os.path.join(os.getcwd(), 'app', 'crews', 'department', 'faqs.txt')
+    ruta_archivo = os.path.join(os.getcwd(), 'faqs.txt')
     
     try:
         # El secreto está en el "encoding='utf-8'"
