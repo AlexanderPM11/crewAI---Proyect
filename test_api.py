@@ -12,6 +12,7 @@ data = {
 try:
     response = requests.post(url, json=data, headers=headers)
     print(f"Status Code: {response.status_code}")
-    print(f"Response Body: {response.json()}")
+    # Usar .encode('utf-8') para evitar errores de charmap en Windows si hay emojis
+    print(f"Response Body: {response.text.encode('utf-8')}")
 except Exception as e:
     print(f"Error: {e}")

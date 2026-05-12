@@ -5,6 +5,7 @@ from app.crews.department import DepartamentoCRMCrew
 import uuid
 import os
 from dotenv import load_dotenv
+import time
 
 # Cargar variables de entorno
 load_dotenv()
@@ -42,6 +43,7 @@ class MensajeResponse(BaseModel):
     respuesta: str
     estado: str
     datos_acumulados: dict
+    tiempo_ejecucion: str
 
 
 @app.get("/")
@@ -66,15 +68,24 @@ async def chat(req: MensajeRequest, x_api_key: str = Header(None)):
         print(f"[EXISTING] Usando sesion existente: {session_id}")
 
     # 3. Procesar Solicitud
+    start_time = time.time()
     try:
         departamento = sesiones[session_id]
         respuesta_final = departamento.procesar_solicitud(req.mensaje)
+        end_time = time.time()
+        tiempo_total_segundos = end_time - start_time
+        
+        # Formatear a minutos y segundos
+        minutos = int(tiempo_total_segundos // 60)
+        segundos = int(tiempo_total_segundos % 60)
+        tiempo_formateado = f"{minutos}m {segundos}s" if minutos > 0 else f"{segundos}s"
 
         return MensajeResponse(
             session_id=session_id,
             respuesta=respuesta_final,
             estado=departamento.estado,
             datos_acumulados=departamento.datos_acumulados,
+            tiempo_ejecucion=tiempo_formateado,
         )
     except Exception as e:
         print(f"[ERROR] Error procesando solicitud: {str(e)}")
