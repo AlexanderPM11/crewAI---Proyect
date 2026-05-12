@@ -1,5 +1,5 @@
 # Dependencias del proyecto
-crewai
+crewai[google-genai]
 crewai-tools
 fastapi
 uvicorn
