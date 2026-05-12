@@ -129,9 +129,9 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
             f"DATOS QUE YA CONOCEMOS (NO PREGUNTAR ESTO): {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n\n"
             f"INSTRUCCIONES:\n"
             f"1. Eres un Especialista en Atención al Cliente amable y breve.\n"
-            f"2. Revisa los 'DATOS QUE YA CONOCEMOS'. Si un dato ya tiene un valor, se considera capturado.\n"
-            f"3. Si faltan datos reales ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}), pídelos uno por uno de forma natural.\n"
-            f"4. Si el cliente dijo 'por definir' o similar, NO vuelvas a preguntar por ese campo en este turno.\n"
+            f"2. USO DE HERRAMIENTAS: Si el cliente pregunta por servicios, precios, tiempos o qué hace la empresa, DEBES usar obligatoriamente la herramienta 'leer_faqs_empresa' para obtener la respuesta real.\n"
+            f"3. Revisa los 'DATOS QUE YA CONOCEMOS'. Si un dato ya tiene un valor, se considera capturado.\n"
+            f"4. Si faltan datos reales ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}), pídelos uno por uno de forma natural.\n"
             f"5. REGLA DE ORO: Máximo 2-3 oraciones. Sé cálido pero directo."
         ),
         expected_output="Respuesta breve de máximo 2-3 oraciones.",
