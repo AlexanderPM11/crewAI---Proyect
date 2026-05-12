@@ -31,14 +31,14 @@ def buscar_oportunidad(id_oportunidad: str) -> str:
     return f"RESULTADO DE BÚSQUEDA: Oportunidad encontrada. ID: {o_id} | Nombre: '{name}' | Etapa: {stage} | Monto: {monto_real} {currency}"
 
 @tool("crear_oportunidad")
-def crear_oportunidad(nombre: str, monto: str = "0", moneda: str = "USD", etapa: str = "NEW", company_id: str = "Desconocido", persona_id: str = "Desconocido") -> str:
+def crear_oportunidad(nombre: str, monto: str = "0", moneda: str = "USD", etapa: str = "NEW", company_id: str = "Desconocido", persona_id: str = "Desconocido", descripcion: str = "") -> str:
     """
     ÚSALA PARA CREAR UNA NUEVA OPORTUNIDAD DE VENTA.
     Requiere: nombre.
-    Opcional: monto (un número, ej. 60000. NO uses comas para los miles. Si no hay monto, usa 0).
-    Opcional: moneda (ej. USD, EUR).
-    Opcional: etapa. LOS ÚNICOS VALORES VÁLIDOS SON: "NEW", "SCREENING", "MEETING", "PROPOSAL", "CUSTOMER".
-    Opcional: company_id (ID de la empresa), persona_id (ID del contacto).
+    Opcional: monto (un número, ej. 60000).
+    Opcional: etapa ("NEW", "SCREENING", "MEETING", "PROPOSAL", "CUSTOMER").
+    Opcional: company_id, persona_id.
+    Opcional: descripcion (Detalles del proyecto o notas de citas).
     """
     # Convertimos el monto a número de forma segura
     try:
@@ -53,7 +53,8 @@ def crear_oportunidad(nombre: str, monto: str = "0", moneda: str = "USD", etapa:
             "amountMicros": monto_micros,
             "currencyCode": moneda
         },
-        "stage": etapa
+        "stage": etapa,
+        "description": descripcion
     }
     
     # NUEVO: Vinculamos con la empresa y el cliente (pointOfContactId)
