@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
@@ -5,6 +7,10 @@ import uuid
 import time
 from app.crews.department import DepartamentoCRMCrew
 from app.core.database import guardar_mensaje, obtener_historial
+
+# Cargar variables de entorno
+load_dotenv()
+API_SECRET_KEY = os.getenv("API_SECRET_KEY", "tri-tec-secret-123")
 
 app = FastAPI(title="Agentic CRM API")
 
@@ -25,8 +31,12 @@ class MensajeResponse(BaseModel):
 # La memoria a largo plazo viene de Supabase
 sessions = {}
 
-@app.post("/api/chat", response_model=MensajeResponse)
-async def chat(request: MensajeRequest):
+@app.post("/chat", response_model=MensajeResponse)
+async def chat(request: MensajeRequest, x_api_key: str = Header(...)):
+    # Validar API Key
+    if x_api_key != API_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Acceso denegado: API Key inválida")
+    
     start_time = time.time()
     
     # 1. Gestionar session_id
