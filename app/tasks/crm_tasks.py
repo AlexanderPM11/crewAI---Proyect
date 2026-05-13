@@ -34,19 +34,27 @@ class TareasDepartamentoCRM:
                 f"--- DATOS QUE YA TENEMOS ---\n{json.dumps(datos_acumulados, ensure_ascii=False)}\n\n"
                 f"TU MISIÓN:\n"
                 f"1. Identifica la intención: ¿Qué quiere el cliente? (Saber precios, soporte, cotizar, saludar, etc.).\n"
-                f"2. Extrae datos: Captura cualquier información nueva (nombre, email, proyecto, etc.).\n"
-                f"3. Prioriza Faltantes: Si es un lead nuevo, los datos CRÍTICOS son 'nombre_persona' y 'email'.\n"
-                f"   No listes todos los campos posibles; solo los 2-3 más importantes para el siguiente paso.\n"
-                f"4. Toma una decisión estratégica: \n"
-                f"   - 'EJECUTAR': Solo si tienes Nombre, Email y al menos una idea del Proyecto.\n"
-                f"   - 'PEDIR_DATOS': Si falta el Nombre o el Email para poder registrarlo.\n"
-                f"   - 'RESPONDER': Si es solo un saludo o charla informal sin intención comercial clara aún.\n\n"
+                f"2. Extrae datos (¡CRÍTICO!): Escanea TODO el 'HISTORIAL RECIENTE' para encontrar el nombre de la persona, empresa, email, etc.\n"
+                f"   - Si el cliente dio su nombre completo (ej: 'Alexander Pérez'), extrae: 'nombre': 'Alexander', 'apellido': 'Pérez'.\n"
+                f"   - Si solo dio un nombre (ej: 'Alexander'), deja 'apellido' como 'Desconocido' o intenta inferirlo si hay pistas.\n"
+                f"   - Si dijo 'Soy Alexander de Genesa', DEBES extraer: 'nombre': 'Alexander', 'empresa': 'Genesa'.\n"
+                f"   - NUNCA dejes campos como 'nombre' o 'empresa' vacíos si están en el historial.\n"
+                f"3. Decisión Estratégica:\n"
+                f"   - 'EJECUTAR': ¡HAZLO YA! Nuestra prioridad es registrar leads completos.\n"
+                f"     Si tienes Nombre y Email, DEBES incluir 'PERSONA_CREAR' en 'acciones_crm'.\n"
+                f"     Si además tienes Empresa o Proyecto, añade 'COMPANIA_CREAR' y 'OPORTUNIDAD_CREAR'.\n"
+                f"     - ¡IMPORTANTE!: Cada vez que registres una oportunidad o un dato relevante, añade 'NOTA_CREAR' para guardar un resumen cualitativo (preferencias, urgencia, contexto) en el perfil del cliente.\n"
+                f"     NUNCA crees una oportunidad sin registrar primero a la PERSONA.\n"
+                f"   - 'PEDIR_DATOS': Si falta el Nombre o el Email. Pide máximo 1 o 2 cosas.\n"
+                f"   - 'RESPONDER': Solo para saludos o charla sin intención comercial clara.\n\n"
+                f"REGLA TÉCNICA: Al pasar datos a los agentes, NO uses estructuras anidadas. Envía los valores planos.\n"
+                f"ACCIONES VÁLIDAS: 'PERSONA_CREAR', 'PERSONA_MODIFICAR', 'OPORTUNIDAD_CREAR', 'COMPANIA_CREAR', 'TICKET_CREAR', 'NOTA_CREAR'.\n\n"
                 f"RESPONDE ÚNICAMENTE EN JSON:\n"
                 f"{{\n"
                 f"  \"intencion\": \"resumen\",\n"
-                f"  \"acciones_crm\": [],\n"
+                f"  \"acciones_crm\": [\"ACCION_1\", \"ACCION_2\"],\n"
                 f"  \"datos_nuevos\": {{}},\n"
-                f"  \"datos_faltantes\": [\"solo los 2 más urgentes\"],\n"
+                f"  \"datos_faltantes\": [],\n"
                 f"  \"decision\": \"EJECUTAR | PEDIR_DATOS | RESPONDER\"\n"
                 f"}}"
             ),
@@ -87,7 +95,8 @@ class TareasDepartamentoCRM:
                 f"  * telefono → parámetro 'telefono'\n\n"
                 f"- Si un campo NO aparece en los datos confirmados, usa 'Desconocido'.\n"
                 f"- REGLA DE TELÉFONO: Si es de RD (809, 829, 849), agrega '+1'. NUNCA uses '+809'.\n"
-                f"- Si el Asesor B2B creó una Compañía, extrae su ID del historial y pásalo a 'company_id'.\n"
+                f"- Si el Asesor B2B creó una Compañía, busca en el historial el mensaje que dice 'ID asignado: ...'. DEBES usar ese ID técnico (cadena hexadecimal) para el parámetro 'company_id'.\n"
+                f"- REGLA DE ORO: NUNCA uses el nombre de la empresa (ej: 'Genesa') como 'company_id'. Si no encuentras un ID técnico con guiones y letras, deja el campo como 'Desconocido'.\n"
                 f"- PROHIBIDO: Inventar emails, teléfonos o nombres que NO estén en los datos confirmados."
             )
 
@@ -100,8 +109,10 @@ class TareasDepartamentoCRM:
                 f"REGLA DE PERSPECTIVA:\n"
                 f"- NO estás hablando con el cliente. Le estás reportando a tu Gerente.\n\n"
                 f"REGLA DE EJECUCIÓN (¡OBLIGATORIA!):\n"
-                f"1. Ejecuta la herramienta correspondiente usando ÚNICAMENTE los datos confirmados.\n"
-                f"2. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs. Copia y pega el resultado de la herramienta."
+                f"1. TU ÚNICA MISIÓN ES LLAMAR A LA HERRAMIENTA CORRESPONDIENTE. Si no la usas, HABRÁS FALLADO.\n"
+                f"2. NUNCA respondas con un JSON o con texto inventado como 'Final Answer' sin haber recibido una respuesta de la herramienta.\n"
+                f"3. NUNCA envíes los datos dentro de un objeto 'properties'. Envía los parámetros directamente (ej: {{\"nombre\": \"valor\"}}).\n"
+                f"4. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs."
             ),
             expected_output="La respuesta exacta y literal devuelta por la herramienta ejecutada.",
             agent=agente,
@@ -132,8 +143,10 @@ class TareasDepartamentoCRM:
                 f"REGLA DE PERSPECTIVA:\n"
                 f"- NO estás hablando con el cliente. Le estás reportando a tu Gerente.\n\n"
                 f"REGLA DE EJECUCIÓN (¡OBLIGATORIA!):\n"
-                f"1. Ejecuta la herramienta correspondiente usando ÚNICAMENTE los datos confirmados.\n"
-                f"2. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs. Copia y pega el resultado de la herramienta."
+                f"1. TU ÚNICA MISIÓN ES LLAMAR A LA HERRAMIENTA CORRESPONDIENTE. Si no la usas, HABRÁS FALLADO.\n"
+                f"2. NUNCA respondas con un JSON o con texto inventado como 'Final Answer' sin haber recibido una respuesta de la herramienta.\n"
+                f"3. NUNCA envíes los datos dentro de un objeto 'properties'. Envía los parámetros directamente (ej: {{\"nombre\": \"valor\"}}).\n"
+                f"4. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs."
             ),
             expected_output="La respuesta exacta y literal devuelta por la herramienta ejecutada.",
             agent=agente,
@@ -155,7 +168,10 @@ class TareasDepartamentoCRM:
                 f"  * descripcion_proyecto + fecha_cita (ej: Jueves 2pm) → parámetro 'descripcion'\n\n"
                 f"- Si 'presupuesto' no está en los datos, usa 0.\n"
                 f"- Usa la etapa 'NEW' por defecto, a menos que ya se esté coordinando una reunión ('fecha_cita' presente), en cuyo caso usa 'SCREENING'.\n"
-                f"- RELACIONES: Revisa los mensajes anteriores. Si tus compañeros ya crearon una Compañía y una Persona, copia ESOS IDs exactos y pásalos a 'company_id' y 'persona_id'.\n"
+                f"- RELACIONES (CRÍTICO): Busca en los mensajes anteriores los IDs técnicos (cadena hexadecimal) generados.\n"
+                f"  * Si se creó una Compañía, busca 'ID asignado: ...'. Pásalo a 'company_id'.\n"
+                f"  * Si se creó una Persona, busca 'ID: ...' o 'ID asignado: ...'. Pásalo a 'persona_id'.\n"
+                f"- REGLA DE ORO: NUNCA uses nombres (ej: 'Alexander' o 'Genesa') como IDs. Si no encuentras el ID técnico, usa 'Desconocido'.\n"
                 f"- PROHIBIDO: Inventar nombres de proyecto o montos que el cliente no haya mencionado."
             )
         else:
@@ -173,8 +189,10 @@ class TareasDepartamentoCRM:
                 f"REGLA DE PERSPECTIVA:\n"
                 f"- NO estás hablando con el cliente. Le estás reportando a tu Gerente.\n\n"
                 f"REGLA DE EJECUCIÓN (¡OBLIGATORIA!):\n"
-                f"1. Ejecuta la herramienta correspondiente usando ÚNICAMENTE los datos confirmados.\n"
-                f"2. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs. Copia y pega el resultado de la herramienta."
+                f"1. TU ÚNICA MISIÓN ES LLAMAR A LA HERRAMIENTA CORRESPONDIENTE. Si no la usas, HABRÁS FALLADO.\n"
+                f"2. NUNCA respondas con un JSON o con texto inventado como 'Final Answer' sin haber recibido una respuesta de la herramienta.\n"
+                f"3. NUNCA envíes los datos dentro de un objeto 'properties'. Envía los parámetros directamente (ej: {{\"nombre\": \"valor\"}}).\n"
+                f"4. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs."
             ),
             expected_output="La respuesta exacta y literal devuelta por la herramienta ejecutada.",
             agent=agente,
@@ -210,12 +228,32 @@ class TareasDepartamentoCRM:
                 f"REGLA DE PERSPECTIVA:\n"
                 f"- NO estás hablando con el cliente. Le estás reportando a tu Gerente.\n\n"
                 f"REGLA DE EJECUCIÓN (¡OBLIGATORIA!):\n"
-                f"1. Ejecuta la herramienta correspondiente usando ÚNICAMENTE los datos confirmados.\n"
-                f"2. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs. Copia y pega el resultado de la herramienta."
+                f"1. TU ÚNICA MISIÓN ES LLAMAR A LA HERRAMIENTA CORRESPONDIENTE. Si no la usas, HABRÁS FALLADO.\n"
+                f"2. NUNCA respondas con un JSON o con texto inventado como 'Final Answer' sin haber recibido una respuesta de la herramienta.\n"
+                f"3. NUNCA envíes los datos dentro de un objeto 'properties'. Envía los parámetros directamente (ej: {{\"nombre\": \"valor\"}}).\n"
+                f"4. Tu 'Final Answer' DEBE SER EXACTAMENTE LA RESPUESTA LITERAL que te devuelva la herramienta. NO resumas, NO modifiques el texto, NO inventes IDs."
             ),
             expected_output="La respuesta exacta y literal devuelta por la herramienta ejecutada.",
             agent=agente,
             output_json=False
+        )
+
+    def tarea_gestionar_nota(self, agente, contexto_chat: str, accion: str, datos_validados: dict):
+        """Tarea para crear o gestionar notas en el CRM."""
+        return Task(
+            description=(
+                f"El Gerente de Operaciones te ha pasado este historial:\n"
+                f"--- INICIO ---\n{contexto_chat}\n--- FIN ---\n\n"
+                f"ACCIÓN: {accion}.\n\n"
+                f"DATOS RELEVANTES: {json.dumps(datos_validados, ensure_ascii=False)}\n\n"
+                f"REGLAS PARA LA NOTA:\n"
+                f"1. Redacta un 'RESUMEN EJECUTIVO' de la charla. No copies todo, extrae lo valioso.\n"
+                f"2. Incluye: Necesidad principal, Empresa/Proyecto, Urgencia detectada y cualquier preferencia mencionada.\n"
+                f"3. Vincula la nota usando el 'person_id' (¡PRIORIDAD!) o 'company_id' que encuentres en el historial (IDs técnicos hexadecimales).\n"
+                f"4. Tu 'Final Answer' DEBE SER LA RESPUESTA LITERAL de la herramienta."
+            ),
+            expected_output="Confirmación de la creación de la nota.",
+            agent=agente
         )
 
     def tarea_respuesta_final(self, agente, mensaje_usuario: str, reporte_backoffice: str, datos_faltantes: list, contexto_chat: str, datos_acumulados: dict):
@@ -237,12 +275,13 @@ class TareasDepartamentoCRM:
                 f"- Datos conocidos: {json.dumps(datos_acumulados, ensure_ascii=False)}\n"
                 f"- Reporte CRM: {reporte_backoffice}\n\n"
                 f"TU MISIÓN:\n"
-                f"1. Eres un Asesor Humano de Triple Tecnología. Usa los datos conocidos para personalizar (ej: usa el nombre {nombre_cliente}).\n"
-                f"2. SI el cliente pide información (servicios, productos, precios), usa 'leer_faqs_empresa'.\n"
-                f"   IMPORTANTE: El input de la herramienta debe ser un JSON simple, ej: {{\"tema\": \"servicios\"}}. NO uses 'properties'.\n"
-                f"3. Responde de forma cálida, profesional y breve (máximo 3 frases).\n"
-                f"4. {instruccion_datos}\n"
-                f"5. REGLA CRÍTICA: Tu salida final debe ser SOLO el mensaje para el cliente. Sin etiquetas 'Thought' ni 'Action'."
+                f"1. Eres un Asesor de Triple Tecnología (equipo corporativo). NO inventes un nombre para ti (ej: No digas 'Soy Sofía').\n"
+                f"   Personaliza la respuesta usando el nombre del cliente: {nombre_cliente}.\n"
+                f"2. CONFIRMACIÓN: Si el 'Reporte CRM' dice que se crearon registros, menciónalo (ej: 'Ya registré tu proyecto de {datos_acumulados.get('nombre_proyecto', 'software')}').\n"
+                f"3. SI el cliente pide información, usa 'leer_faqs_empresa' con {{\"tema\": \"...\"}}.\n"
+                f"4. Responde de forma cálida y breve (máximo 3 frases).\n"
+                f"5. {instruccion_datos}\n"
+                f"6. REGLA CRÍTICA: Tu salida final debe ser SOLO el mensaje para el cliente. Sin 'Thought' ni 'Action'."
             ),
             expected_output="El mensaje final que el cliente recibirá por WhatsApp.",
             agent=agente

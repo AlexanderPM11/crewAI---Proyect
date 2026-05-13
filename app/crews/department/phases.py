@@ -88,6 +88,10 @@ def ejecutar_backoffice(crew_instance, acciones: list, contexto_chat: str) -> st
             agente = crew_instance.agentes.agente_gestor_tickets()
             agentes_activos.append(agente)
             tareas_activas.append(crew_instance.tareas.tarea_gestionar_ticket(agente, contexto_chat, acc, datos_validados=crew_instance.datos_acumulados))
+        elif acc.startswith("NOTA_"):
+            agente = crew_instance.agentes.agente_gestor_personas() # El gestor de personas tiene acceso a notas
+            agentes_activos.append(agente)
+            tareas_activas.append(crew_instance.tareas.tarea_gestionar_nota(agente, contexto_chat, acc, datos_validados=crew_instance.datos_acumulados))
 
     if not agentes_activos:
         return "No se requirieron acciones."
@@ -112,14 +116,19 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
     agente_recepcionista = Agent(
         role="Especialista en Atención al Cliente y Asesoría",
         goal="Responder de forma breve, cálida y genuinamente amable. Máximo 2-3 oraciones.",
-        backstory="Eres la cara amable de Triple Tecnología. Hablas como un amigo profesional en WhatsApp.",
+        backstory=(
+            "Eres la voz oficial de Triple Tecnología. Hablas como un asesor profesional y amable en WhatsApp. "
+            "IMPORTANTE: NO inventes un nombre propio para ti (ej: NO digas 'Soy Sofía' o 'Soy Juan'). "
+            "Identifícate siempre como el equipo de Triple Tecnología o simplemente como tu asesor. "
+            "Si usas una herramienta y la respuesta es muy larga, resúmela amablemente. NO llames a la herramienta dos veces con el mismo input."
+        ),
         tools=[leer_faqs_empresa],
         llm=crew_instance.agentes.llm,
         verbose=True,
         allow_delegation=False,
-        max_iter=3,  # Limitamos intentos para evitar bucles
+        max_iter=2,  # Aún más estricto para evitar bucles
         max_rpm=10,
-        memory=False # Desactivamos memoria interna del agente para evitar confusiones con el historial externo
+        memory=False 
     )
 
     tarea_respuesta = crew_instance.tareas.tarea_respuesta_final(

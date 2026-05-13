@@ -54,13 +54,27 @@ def buscar_compania(termino_busqueda: str, tipo_busqueda: str = "name") -> str:
     return f"RESULTADO DE BÚSQUEDA: Compañía encontrada. ID: {c_id} | Nombre: '{name}' | Web: {domain} | Empleados: {employees} | Ubicación: {city}, {country}."
 
 @tool("crear_compania")
-def crear_compania(nombre: str, dominio_web: str = "Desconocido", empleados: str = "0", ciudad: str = "Desconocido", pais: str = "Desconocido") -> str:
+def crear_compania(nombre: str = "", dominio_web: str = "Desconocido", empleados: str = "0", ciudad: str = "Desconocido", pais: str = "Desconocido", **kwargs) -> str:
     """
-    ÚSALA PARA REGISTRAR UNA NUEVA EMPRESA O COMPAÑÍA.
-    Requiere: nombre.
-    Opcionales: dominio_web (ej. https://airbnb.com), empleados (en números), ciudad, pais.
-    Si el usuario no te da un dato, envía exactamente "Desconocido" o "0".
+    Crea una nueva empresa.
+    Parámetros: nombre, dominio_web, empleados, ciudad, pais.
     """
+    # FAIL-SAFE para errores de estructura del LLM
+    data = kwargs
+    if not nombre and 'properties' in kwargs:
+        data = kwargs['properties']
+        nombre = data.get('nombre')
+        dominio_web = data.get('dominio_web', dominio_web)
+        empleados = data.get('empleados', empleados)
+        ciudad = data.get('ciudad', ciudad)
+        pais = data.get('pais', pais)
+
+    # Si no vinieron en properties, buscamos en los argumentos directos o kwargs
+    nombre = nombre or kwargs.get('nombre')
+
+    if not nombre:
+        return "Error: El nombre de la empresa es obligatorio."
+
     payload = {"name": nombre}
 
     if dominio_web != "Desconocido":

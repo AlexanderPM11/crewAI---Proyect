@@ -16,6 +16,7 @@ from app.tools.opportunity_tools import (
 from app.tools.company_tools import (
     buscar_compania, crear_compania, modificar_compania, eliminar_compania
 )
+from app.tools.note_tools import crear_nota, buscar_notas_por_persona
 
 class AgentesDepartamentoCRM:
     
@@ -53,21 +54,6 @@ class AgentesDepartamentoCRM:
             allow_delegation=False
         )
 
-    def agente_estratega(self):
-        return Agent(
-            role='Estratega Jefe de Operaciones CRM',
-            goal='Analizar la conversación y determinar la mejor estrategia para ayudar al cliente, optimizando el uso del CRM.',
-            backstory=(
-                'Eres el cerebro táctico del departamento. Tu especialidad es leer entre líneas. '
-                'No solo clasificas, sino que entiendes en qué punto de la relación con el cliente nos encontramos. '
-                'Decides si tenemos información suficiente para actuar o si debemos ser empáticos y pedir más datos antes de tocar el CRM. '
-                'Tu salida siempre es una decisión estratégica basada en la eficiencia y la satisfacción del cliente.'
-            ),
-            llm=self.llm,
-            verbose=True,
-            allow_delegation=False
-        )
-
     def agente_gestor_personas(self):
         return Agent(
             role='Especialista en Atención al Cliente',
@@ -80,7 +66,8 @@ class AgentesDepartamentoCRM:
             tools=[
                 buscar_persona_por_email, buscar_persona_por_nombre,
                 buscar_persona_por_apellido, buscar_persona_por_telefono,
-                crear_persona, modificar_persona, eliminar_persona
+                crear_persona, modificar_persona, eliminar_persona,
+                crear_nota, buscar_notas_por_persona
             ],
             llm=self.llm,
             verbose=True,
@@ -111,11 +98,11 @@ class AgentesDepartamentoCRM:
             role='Ejecutivo de Cuentas y Ventas',
             goal='Captar interés comercial, gestionar presupuestos y avanzar las negociaciones de ventas a la etapa de cierre.',
             backstory=(
-                'Eres un excelente cerrador de ventas y asesor comercial. Tienes una actitud entusiasta, persuasiva y muy amable. '
+                'Eres un excelente cerrador de ventas y asesor comercial. Tienes una actitud entusiasa, persuasiva y muy amable. '
                 'Interactúas en primera persona con los prospectos. Usas tus herramientas para registrar cotizaciones, actualizar montos '
                 'y mover los negocios por las etapas correspondientes (NEW, MEETING, PROPOSAL, CUSTOMER). Trabajas paso a paso.'
             ),
-            tools=[buscar_oportunidad, crear_oportunidad, modificar_oportunidad, eliminar_oportunidad],
+            tools=[crear_oportunidad, buscar_oportunidad, modificar_oportunidad, eliminar_oportunidad, crear_nota],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,
@@ -132,7 +119,7 @@ class AgentesDepartamentoCRM:
                 'Hablas en primera persona. Eres un investigador autónomo: si un cliente te pide modificar su empresa, primero la buscas '
                 'por su nombre o dominio web usando tus herramientas, obtienes su ID, y luego aplicas los cambios precisos.'
             ),
-            tools=[buscar_compania, crear_compania, modificar_compania, eliminar_compania],
+            tools=[buscar_compania, crear_compania, modificar_compania, eliminar_compania, crear_nota],
             llm=self.llm,
             verbose=True,
             allow_delegation=False,

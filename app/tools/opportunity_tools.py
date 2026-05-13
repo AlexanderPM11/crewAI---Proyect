@@ -31,15 +31,30 @@ def buscar_oportunidad(id_oportunidad: str) -> str:
     return f"RESULTADO DE BÚSQUEDA: Oportunidad encontrada. ID: {o_id} | Nombre: '{name}' | Etapa: {stage} | Monto: {monto_real} {currency}"
 
 @tool("crear_oportunidad")
-def crear_oportunidad(nombre: str, monto: str = "0", moneda: str = "USD", etapa: str = "NEW", company_id: str = "Desconocido", persona_id: str = "Desconocido", descripcion: str = "") -> str:
+def crear_oportunidad(nombre: str = "", **kwargs) -> str:
     """
-    ÚSALA PARA CREAR UNA NUEVA OPORTUNIDAD DE VENTA.
-    Requiere: nombre.
-    Opcional: monto (un número, ej. 60000).
-    Opcional: etapa ("NEW", "SCREENING", "MEETING", "PROPOSAL", "CUSTOMER").
-    Opcional: company_id, persona_id.
-    Opcional: descripcion (Detalles del proyecto o notas de citas).
+    Crea una oportunidad de venta.
+    Argumentos: nombre, monto, moneda, etapa, company_id, persona_id.
     """
+    # FAIL-SAFE para errores de estructura del LLM
+    data = kwargs
+    if not nombre and 'properties' in kwargs:
+        data = kwargs['properties']
+        nombre = data.get('nombre')
+    
+    if not nombre:
+        nombre = kwargs.get('nombre')
+
+    if not nombre:
+        return "Error: El nombre de la oportunidad es obligatorio. Por favor proporcione el parámetro 'nombre' directamente."
+
+    # Extraemos el resto de parámetros
+    monto = data.get('monto', kwargs.get('monto', '0'))
+    moneda = data.get('moneda', kwargs.get('moneda', 'USD'))
+    etapa = data.get('etapa', kwargs.get('etapa', 'NEW'))
+    company_id = data.get('company_id', kwargs.get('company_id', 'Desconocido'))
+    persona_id = data.get('persona_id', kwargs.get('persona_id', 'Desconocido'))
+
     # Convertimos el monto a número de forma segura
     try:
         monto_num = float(str(monto).replace(",", ""))
@@ -53,17 +68,18 @@ def crear_oportunidad(nombre: str, monto: str = "0", moneda: str = "USD", etapa:
             "amountMicros": monto_micros,
             "currencyCode": moneda
         },
-        "stage": etapa,
-        "description": descripcion
+        "stage": etapa
     }
     
     # NUEVO: Vinculamos con la empresa y el cliente (pointOfContactId)
-    # Bloqueamos palabras basura como "null", "none" o "desconocido"
-    if company_id and str(company_id).lower() not in ['desconocido', 'null', 'none']: 
-        payload["companyId"] = company_id
-        
-    if persona_id and str(persona_id).lower() not in ['desconocido', 'null', 'none']: 
-        payload["pointOfContactId"] = persona_id
+    # VALIDACIÓN DE UUID: Solo enviamos si parece un ID real, no un nombre
+    import re
+    def is_uuid(val):
+        if not val or str(val).lower() in ['desconocido', 'null', 'none']: return False
+        return bool(re.match(r'^[0-9a-fA-F-]+$', str(val)) and len(str(val)) > 20)
+
+    if is_uuid(company_id): payload["companyId"] = company_id
+    if is_uuid(persona_id): payload["pointOfContactId"] = persona_id
 
     respuesta = _twenty_api_request('POST', 'opportunities', payload=payload)
 

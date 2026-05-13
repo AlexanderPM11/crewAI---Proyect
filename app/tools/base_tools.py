@@ -9,18 +9,25 @@ load_dotenv()
 
 def _twenty_api_request(method: str, endpoint: str, params=None, payload=None) -> dict:
     """Maneja las peticiones a TwentyCRM. Retorna un dict o lanza una excepción."""
-    url = f"{os.getenv('TWENTY_URL')}/{endpoint}"
+    # Limpiamos la URL base para evitar dobles barras
+    base_url = os.getenv('TWENTY_URL', '').rstrip('/')
+    clean_endpoint = endpoint.lstrip('/')
+    url = f"{base_url}/{clean_endpoint}"
     headers = {
         "Authorization": f"Bearer {os.getenv('TWENTY_API_KEY')}",
         "Content-Type": "application/json"
     }
 
     try:
+        if payload: print(f"[DEBUG Twenty] Payload: {payload}")
+        
         if method == 'GET':
             response = requests.get(url, headers=headers, params=params)
         elif method == 'POST':
             response = requests.post(url, headers=headers, json=payload)
-        elif method == 'PATCH': # Para modificar
+        elif method == 'PATCH':
+            response = requests.post(url, headers=headers, json=payload) # Twenty usa POST para PATCH en algunos casos, pero requests tiene .patch
+            # Usaremos .patch por estándar, pero validemos si tu instancia requiere algo especial
             response = requests.patch(url, headers=headers, json=payload)
         elif method == 'DELETE':
             response = requests.delete(url, headers=headers)

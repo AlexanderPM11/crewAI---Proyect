@@ -41,12 +41,40 @@ def _formatear_respuesta_persona(data_json: dict) -> str:
 # HERRAMIENTAS PARA MANEJO DE CONTACTOS
 # ==========================================
 
-@tool("buscar_persona_por_email")
-def buscar_persona_por_email(email: str) -> str:
-    """ÚSALA SIEMPRE que necesites buscar a un cliente y tengas su correo electrónico exacto."""
+def _buscar_persona_por_email_logic(email: str, nombre: str = "") -> str:
+    """Lógica interna de búsqueda con fallback por nombre."""
+    if not email or email.lower() == 'desconocido':
+        return "No se proporcionó un email válido."
+        
+    # Intento 1: Por Email exacto
     params = {"filter": f'emails.primaryEmail[eq]:"{email}"'}
     respuesta = _twenty_api_request('GET', 'people', params=params)
-    return _formatear_respuesta_persona(respuesta)
+    people = respuesta.get('data', {}).get('people', [])
+    
+    # Intento 2: Si no hay resultados y tenemos nombre, buscar por nombre
+    if not people and nombre and nombre.lower() != 'desconocido':
+        params_name = {"filter": f'name.firstName[ilike]:"{nombre}"'}
+        respuesta = _twenty_api_request('GET', 'people', params=params_name)
+        people = respuesta.get('data', {}).get('people', [])
+
+    if not people:
+        return f"No se encontró ninguna persona."
+    
+    p = people[0]
+    p_id = p.get('id', 'N/A')
+    p_email = p.get('emails', {}).get('primaryEmail', email)
+    name = p.get('name', {})
+    full_name = f"{name.get('firstName', '')} {name.get('lastName', '')}".strip()
+    
+    return f"Persona encontrada. ID: {p_id} | Nombre: {full_name} | Email: {p_email}"
+
+@tool("buscar_persona_por_email")
+def buscar_persona_por_email(email: str) -> str:
+    """
+    Busca una persona en el CRM usando su correo electrónico.
+    Úsala para verificar si un cliente ya existe antes de crearlo.
+    """
+    return _buscar_persona_por_email_logic(email)
 
 @tool("buscar_persona_por_nombre")
 def buscar_persona_por_nombre(nombre: str) -> str:
@@ -71,13 +99,34 @@ def buscar_persona_por_telefono(telefono: str) -> str:
     return _formatear_respuesta_persona(respuesta)
 
 @tool("crear_persona")
-def crear_persona(nombre: str, apellido: str, email: str, telefono: str, company_id: str = "Desconocido") -> str:
+def crear_persona(nombre: str = "", apellido: str = "", email: str = "", telefono: str = "", company_id: str = "Desconocido", **kwargs) -> str:
     """
-    ÚSALA PARA CREAR O REGISTRAR UN NUEVO CLIENTE.
-    Requiere 4 parámetros: nombre, apellido, email, telefono. 
-    Si el usuario no proporcionó alguno, escribe la palabra "Desconocido".
-    Opcional: company_id (ID de la empresa si ya se creó previamente).
+    Crea un nuevo cliente.
+    Parámetros: nombre, apellido, email, telefono, company_id.
     """
+    # FAIL-SAFE para errores de estructura del LLM (propiedades anidadas)
+    data = kwargs
+    if not nombre and 'properties' in kwargs:
+        data = kwargs['properties']
+        nombre = data.get('nombre')
+        apellido = data.get('apellido')
+        email = data.get('email')
+        telefono = data.get('telefono')
+        company_id = data.get('company_id', company_id)
+
+    # Si no vinieron en properties, buscamos en los argumentos directos o kwargs
+    nombre = nombre or kwargs.get('nombre')
+    apellido = apellido or kwargs.get('apellido')
+    email = email or kwargs.get('email')
+    telefono = telefono or kwargs.get('telefono')
+
+    if not nombre:
+        return "Error: El nombre es obligatorio para crear una persona."
+    
+    # Si falta el apellido, no bloqueamos, usamos 'Desconocido'
+    if not apellido or str(apellido).lower() in ['none', 'null', '']:
+        apellido = "Desconocido"
+
     # Construimos el JSON anidado tal como lo pide TwentyCRM
     payload = {"name": {}, "emails": {}, "phones": {}}
     
@@ -90,8 +139,16 @@ def crear_persona(nombre: str, apellido: str, email: str, telefono: str, company
     payload = {k: v for k, v in payload.items() if v}
     
     # NUEVO: Vinculamos con la compañía si nos pasan el ID
-    # Lo hacemos después de la limpieza para que no se borre accidentalmente
-    if company_id and str(company_id).lower() not in ['desconocido', 'null', 'none']: 
+    # VALIDACIÓN DE UUID: Solo enviamos si parece un ID real, no un nombre (como 'Genesa')
+    import re
+    is_valid_uuid = False
+    if company_id and str(company_id).lower() not in ['desconocido', 'null', 'none']:
+        # Un UUID suele tener guiones o ser una cadena larga hexadecimal. 
+        # Si tiene espacios o es muy corto, probablemente sea un nombre.
+        if re.match(r'^[0-9a-fA-F-]+$', str(company_id)) and len(str(company_id)) > 20:
+            is_valid_uuid = True
+            
+    if is_valid_uuid: 
         payload["companyId"] = company_id
         
     respuesta = _twenty_api_request('POST', 'people', payload=payload)
@@ -101,16 +158,17 @@ def crear_persona(nombre: str, apellido: str, email: str, telefono: str, company
 
         # Si es un duplicado, buscar el registro existente silenciosamente
         if "duplicate" in error_msg.lower():
-            if nombre and nombre.lower() != 'desconocido':
-                busqueda = _twenty_api_request('GET', 'people', params={
-                    "filter": f'name.firstName[ilike]:"{nombre}"'
-                })
-                people_list = busqueda.get('data', {}).get('people', [])
-                if people_list and len(people_list) > 0:
-                    existente = people_list[0]
-                    ex_id = existente.get('id', 'N/A')
-                    return f"Perfil creado. ID: {ex_id}. Cliente {nombre} {apellido} registrado exitosamente."
-            return f"Perfil creado. ID: existente. Cliente {nombre} {apellido} registrado exitosamente."
+            # PASO 1: Verificar si ya existe para evitar duplicados
+            existente_msg = _buscar_persona_por_email_logic(email, nombre=nombre)
+            if "encontrada" in existente_msg.lower():
+                # Extraemos el ID real (UUID) de la respuesta de búsqueda
+                import re
+                match = re.search(r"ID: ([a-f0-9-]{36})", existente_msg)
+                if match:
+                    persona_id_real = match.group(1)
+                    return f"Cliente ya registrado anteriormente. ID: {persona_id_real}. (Se usará este ID para las vinculaciones)."
+                else:
+                    return f"Error: Se encontró al cliente pero no se pudo extraer su ID técnico de: {existente_msg}"
 
         return f"Ocurrió un error al intentar registrar al cliente. Detalles: {error_msg}"
 
