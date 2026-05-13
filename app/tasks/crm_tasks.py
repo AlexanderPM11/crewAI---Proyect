@@ -221,27 +221,29 @@ class TareasDepartamentoCRM:
     def tarea_respuesta_final(self, agente, mensaje_usuario: str, reporte_backoffice: str, datos_faltantes: list, contexto_chat: str, datos_acumulados: dict):
         """Tarea para generar la respuesta final al cliente."""
         
-        # Limitamos a pedir solo 1 o 2 datos para no abrumar
         datos_a_pedir = datos_faltantes[:2]
         instruccion_datos = ""
         if datos_a_pedir:
-            instruccion_datos = f"Faltan datos, por favor solicita amablemente SOLO estos: {', '.join(datos_a_pedir)}."
-        else:
-            instruccion_datos = "No faltan datos críticos, despídete cordialmente."
+            instruccion_datos = f"Al final, solicita amablemente SOLO estos datos: {', '.join(datos_a_pedir)}."
+        
+        # Extraer nombre si existe para personalizar
+        nombre_cliente = datos_acumulados.get('nombre_persona', '')
+        saludo_personalizado = f"Hola {nombre_cliente}," if nombre_cliente else "¡Hola!"
 
         return Task(
             description=(
-                f"Historial de Chat:\n{contexto_chat}\n\n"
-                f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
-                f"DATOS QUE YA CONOCEMOS: {json.dumps(datos_acumulados, ensure_ascii=False)}\n"
-                f"REPORTE DEL CRM: {reporte_backoffice}\n\n"
-                f"INSTRUCCIONES DE RESPUESTA:\n"
-                f"1. Eres la voz de Triple Tecnología. Sé cálido, breve (máximo 2-3 frases) y humano.\n"
-                f"2. SI el cliente solo saluda (ej: 'Hola'), NO uses herramientas. Responde amablemente y aplica el punto 4.\n"
-                f"3. SI el cliente pregunta algo específico de la empresa, usa 'leer_faqs_empresa' pasando el tema en el parámetro 'busqueda'.\n"
-                f"4. CAPTACIÓN: {instruccion_datos}\n"
-                f"5. IMPORTANTE: Tu respuesta final debe ser DIRECTAMENTE lo que le dirás al cliente. No incluyas 'Thought:' ni etiquetas internas."
+                f"SITUACIÓN:\n"
+                f"- Mensaje Cliente: '{mensaje_usuario}'\n"
+                f"- Datos conocidos: {json.dumps(datos_acumulados, ensure_ascii=False)}\n"
+                f"- Reporte CRM: {reporte_backoffice}\n\n"
+                f"TU MISIÓN:\n"
+                f"1. Eres un Asesor Humano de Triple Tecnología. Usa los datos conocidos para personalizar (ej: usa el nombre {nombre_cliente}).\n"
+                f"2. SI el cliente pide información (servicios, productos, precios), usa 'leer_faqs_empresa'.\n"
+                f"   IMPORTANTE: El input de la herramienta debe ser un JSON simple, ej: {{\"tema\": \"servicios\"}}. NO uses 'properties'.\n"
+                f"3. Responde de forma cálida, profesional y breve (máximo 3 frases).\n"
+                f"4. {instruccion_datos}\n"
+                f"5. REGLA CRÍTICA: Tu salida final debe ser SOLO el mensaje para el cliente. Sin etiquetas 'Thought' ni 'Action'."
             ),
-            expected_output="Una respuesta humana, cálida y breve (máximo 3 oraciones) para el cliente.",
+            expected_output="El mensaje final que el cliente recibirá por WhatsApp.",
             agent=agente
         )

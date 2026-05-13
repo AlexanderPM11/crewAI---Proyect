@@ -131,7 +131,13 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
         crew_instance.datos_acumulados
     )
 
-    crew_respuesta = Crew(agents=[agente_recepcionista], tasks=[tarea_respuesta], process=Process.sequential, verbose=True)
+    crew_respuesta = Crew(agents=[agente_recepcionista], tasks=[tarea_respuesta], process=Process.sequential, verbose=False)
     respuesta_final = str(crew_respuesta.kickoff())
+    
+    # Limpiamos posibles etiquetas residuales del LLM
+    respuesta_final = respuesta_final.replace("Final Answer:", "").replace("Thought:", "").strip()
+    
+    print(f"\n👩💼 Recepcionista: {respuesta_final}")
+    
     crew_instance.historial_chat.append(f"Asistente: {respuesta_final}")
     return respuesta_final

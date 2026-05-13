@@ -2,10 +2,10 @@ import os
 from crewai.tools import tool
 
 @tool("leer_faqs_empresa")
-def leer_faqs_empresa(busqueda: str = None) -> str:
+def leer_faqs_empresa(tema: str = None) -> str:
     """
-    Lee la base de conocimiento de Triple Tecnología.
-    Pasa un término en 'busqueda' para filtrar información específica (precios, servicios, etc.).
+    Busca información en la base de conocimientos.
+    Argumento 'tema': palabra clave (precios, servicios, contacto, etc.).
     """
     ruta_archivo = os.path.join(os.getcwd(), 'faqs.md')
     
@@ -13,12 +13,12 @@ def leer_faqs_empresa(busqueda: str = None) -> str:
         with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
             contenido = archivo.read()
             
-            if busqueda and busqueda.lower() != "todo":
+            if tema and tema.lower() != "todo":
                 lineas = contenido.split('\n')
-                resultados = [l for l in lineas if busqueda.lower() in l.lower()]
+                resultados = [l for l in lineas if tema.lower() in l.lower()]
                 if resultados:
-                    return f"RESULTADOS PARA '{busqueda}':\n" + "\n".join(resultados[:20])
-                return f"No se encontró información específica sobre '{busqueda}'. Aquí tienes un resumen general:\n{contenido[:500]}..."
+                    return f"RESULTADOS PARA '{tema}':\n" + "\n".join(resultados[:25])
+                return f"No encontré '{tema}'. Resumen:\n{contenido[:500]}..."
             
             return f"--- BASE DE CONOCIMIENTO ---\n{contenido}\n--- FIN ---"
     except FileNotFoundError:
