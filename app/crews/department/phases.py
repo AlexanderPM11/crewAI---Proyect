@@ -109,9 +109,6 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
     """Genera la respuesta final de la Recepcionista."""
     from app.tools.faq_tools import leer_faqs_empresa
 
-    instruccion_datos_faltantes = f"\n6. DATOS FALTANTES: Pide amable: {', '.join(datos_faltantes)}" if datos_faltantes else ""
-    resumen_datos = f"\n\nDatos actuales: {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}" if crew_instance.datos_acumulados else ""
-
     agente_recepcionista = Agent(
         role="Especialista en Atención al Cliente y Asesoría",
         goal="Responder de forma breve, cálida y genuinamente amable. Máximo 2-3 oraciones.",
@@ -120,6 +117,9 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
         llm=crew_instance.agentes.llm,
         verbose=True,
         allow_delegation=False,
+        max_iter=3,  # Limitamos intentos para evitar bucles
+        max_rpm=10,
+        memory=False # Desactivamos memoria interna del agente para evitar confusiones con el historial externo
     )
 
     tarea_respuesta = crew_instance.tareas.tarea_respuesta_final(

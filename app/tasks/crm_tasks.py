@@ -33,24 +33,20 @@ class TareasDepartamentoCRM:
                 f"--- ÚLTIMO MENSAJE ---\n'{mensaje_usuario}'\n\n"
                 f"--- DATOS QUE YA TENEMOS ---\n{json.dumps(datos_acumulados, ensure_ascii=False)}\n\n"
                 f"TU MISIÓN:\n"
-                f"1. Identifica la intención: ¿Qué quiere el cliente exactamente?\n"
-                f"2. Extrae TODOS los datos posibles: Revisa el HISTORIAL RECIENTE y el ÚLTIMO MENSAJE para capturar información.\n"
-                f"   IMPORTANTE: Si un dato ya aparece en el historial o en 'DATOS QUE YA TENEMOS', no lo pidas de nuevo.\n"
-                f"   CAMPOS VÁLIDOS: 'nombre_persona', 'apellido', 'email', 'telefono', 'nombre_empresa', 'dominio_web', 'nombre_proyecto', 'descripcion_proyecto', 'presupuesto', 'descripcion_problema', 'fecha_cita'.\n"
-                f"3. Determina acciones CRM: ¿Qué operaciones (CREAR/MODIFICAR) se necesitarán eventualmente? Ej: 'PERSONA_CREAR', 'OPORTUNIDAD_CREAR'.\n"
-                f"4. Evalúa completitud: ¿Tenemos los datos mínimos para ejecutar esas acciones YA MISMO? Revisa bien lo que el usuario ya dijo antes.\n"
-                f"5. Toma una decisión estratégica: \n"
-                f"   - 'EJECUTAR': Tenemos los datos básicos (Mínimo: Nombre, Email y Proyecto). ¡Hazlo YA si tienes estos 3!\n"
-                f"   - 'PEDIR_DATOS': Faltan datos críticos. Si el usuario pregunta algo pero aún no tenemos su ficha, pide lo que falta.\n"
-                f"   - 'RESPONDER': Solo para saludos, despedidas o si el flujo de venta terminó.\n\n"
-                f"REGLA DE ORO DE EJECUCIÓN:\n"
-                f"Si el usuario ya dio su Email y el Nombre del Proyecto, DEBES elegir 'EJECUTAR' y listar las acciones ['PERSONA_CREAR', 'OPORTUNIDAD_CREAR'].\n\n"
-                f"RESPONDE ÚNICAMENTE CON ESTE FORMATO JSON:\n"
+                f"1. Identifica la intención: ¿Qué quiere el cliente? (Saber precios, soporte, cotizar, saludar, etc.).\n"
+                f"2. Extrae datos: Captura cualquier información nueva (nombre, email, proyecto, etc.).\n"
+                f"3. Prioriza Faltantes: Si es un lead nuevo, los datos CRÍTICOS son 'nombre_persona' y 'email'.\n"
+                f"   No listes todos los campos posibles; solo los 2-3 más importantes para el siguiente paso.\n"
+                f"4. Toma una decisión estratégica: \n"
+                f"   - 'EJECUTAR': Solo si tienes Nombre, Email y al menos una idea del Proyecto.\n"
+                f"   - 'PEDIR_DATOS': Si falta el Nombre o el Email para poder registrarlo.\n"
+                f"   - 'RESPONDER': Si es solo un saludo o charla informal sin intención comercial clara aún.\n\n"
+                f"RESPONDE ÚNICAMENTE EN JSON:\n"
                 f"{{\n"
-                f"  \"intencion\": \"resumen breve\",\n"
-                f"  \"acciones_crm\": [\"ACCION_1\", \"ACCION_2\"],\n"
-                f"  \"datos_nuevos\": {{\"campo\": \"valor\"}},\n"
-                f"  \"datos_faltantes\": [\"lo que falta\"],\n"
+                f"  \"intencion\": \"resumen\",\n"
+                f"  \"acciones_crm\": [],\n"
+                f"  \"datos_nuevos\": {{}},\n"
+                f"  \"datos_faltantes\": [\"solo los 2 más urgentes\"],\n"
                 f"  \"decision\": \"EJECUTAR | PEDIR_DATOS | RESPONDER\"\n"
                 f"}}"
             ),
@@ -225,23 +221,27 @@ class TareasDepartamentoCRM:
     def tarea_respuesta_final(self, agente, mensaje_usuario: str, reporte_backoffice: str, datos_faltantes: list, contexto_chat: str, datos_acumulados: dict):
         """Tarea para generar la respuesta final al cliente."""
         
-        instruccion_datos_faltantes = ""
-        if datos_faltantes:
-            instruccion_datos_faltantes = f"Faltan estos datos para completar el registro: {', '.join(datos_faltantes)}. Pídelos amablemente."
+        # Limitamos a pedir solo 1 o 2 datos para no abrumar
+        datos_a_pedir = datos_faltantes[:2]
+        instruccion_datos = ""
+        if datos_a_pedir:
+            instruccion_datos = f"Faltan datos, por favor solicita amablemente SOLO estos: {', '.join(datos_a_pedir)}."
+        else:
+            instruccion_datos = "No faltan datos críticos, despídete cordialmente."
 
         return Task(
             description=(
                 f"Historial de Chat:\n{contexto_chat}\n\n"
                 f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
                 f"DATOS QUE YA CONOCEMOS: {json.dumps(datos_acumulados, ensure_ascii=False)}\n"
-                f"REPORTE DEL EQUIPO TÉCNICO (Lo que se registró en el CRM): {reporte_backoffice}\n\n"
-                f"TU MISIÓN:\n"
-                f"1. Eres un Especialista en Atención al Cliente de Triple Tecnología.\n"
-                f"2. CONFIRMACIÓN: Si el reporte indica éxito en el CRM, confírmalo (ej: 'Ya registré tu empresa y la oportunidad de proyecto').\n"
-                f"3. BASE DE CONOCIMIENTO: Si el cliente tiene dudas técnicas o comerciales, usa 'leer_faqs_empresa' para responder con precisión.\n"
-                f"4. CAPTACIÓN: {instruccion_datos_faltantes}\n"
-                f"5. REGLA DE ORO: Máximo 3 oraciones. Sé cálido, humano y profesional. Evita sonar como un robot."
+                f"REPORTE DEL CRM: {reporte_backoffice}\n\n"
+                f"INSTRUCCIONES DE RESPUESTA:\n"
+                f"1. Eres la voz de Triple Tecnología. Sé cálido, breve (máximo 2-3 frases) y humano.\n"
+                f"2. SI el cliente solo saluda (ej: 'Hola'), NO uses herramientas. Responde amablemente y aplica el punto 4.\n"
+                f"3. SI el cliente pregunta algo específico de la empresa, usa 'leer_faqs_empresa' pasando el tema en el parámetro 'busqueda'.\n"
+                f"4. CAPTACIÓN: {instruccion_datos}\n"
+                f"5. IMPORTANTE: Tu respuesta final debe ser DIRECTAMENTE lo que le dirás al cliente. No incluyas 'Thought:' ni etiquetas internas."
             ),
-            expected_output="Una respuesta breve y amable que resuelva la duda y/o confirme las acciones.",
+            expected_output="Una respuesta humana, cálida y breve (máximo 3 oraciones) para el cliente.",
             agent=agente
         )
