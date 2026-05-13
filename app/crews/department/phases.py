@@ -122,21 +122,13 @@ def generar_respuesta(crew_instance, mensaje_usuario: str, reporte_backoffice: s
         allow_delegation=False,
     )
 
-    tarea_respuesta = Task(
-        description=(
-            f"Historial de Chat:\n{contexto_chat}\n\n"
-            f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
-            f"DATOS QUE YA CONOCEMOS: {json.dumps(crew_instance.datos_acumulados, ensure_ascii=False)}\n"
-            f"REPORTE DEL EQUIPO TÉCNICO (Lo que se registró en el CRM): {reporte_backoffice}\n\n"
-            f"INSTRUCCIONES:\n"
-            f"1. Eres un Especialista en Atención al Cliente y Captación de Leads.\n"
-            f"2. CONFIRMACIÓN: Si el reporte indica que se creó una oportunidad o persona, CONFÍRMALO al cliente de forma amable. Ejemplo: '¡Listo Alexander! Ya registré tu proyecto de App móvil y tu correo.'\n"
-            f"3. RESPUESTA HÍBRIDA: Resuelve la duda técnica usando 'leer_faqs_empresa'.\n"
-            f"4. CAPTACIÓN ACTIVA: Si faltan datos ({', '.join(datos_faltantes) if datos_faltantes else 'ninguno'}), pide UN solo dato. Si NO faltan datos, despídete cordialmente diciendo que el equipo lo contactará pronto.\n"
-            f"5. REGLA DE ORO: Máximo 3-4 oraciones. Sé cálido, profesional y humano."
-        ),
-        expected_output="Respuesta humana que informa y solicita un dato para el CRM.",
-        agent=agente_recepcionista,
+    tarea_respuesta = crew_instance.tareas.tarea_respuesta_final(
+        agente_recepcionista,
+        mensaje_usuario,
+        reporte_backoffice,
+        datos_faltantes,
+        contexto_chat,
+        crew_instance.datos_acumulados
     )
 
     crew_respuesta = Crew(agents=[agente_recepcionista], tasks=[tarea_respuesta], process=Process.sequential, verbose=True)

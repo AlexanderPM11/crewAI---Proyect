@@ -221,3 +221,27 @@ class TareasDepartamentoCRM:
             agent=agente,
             output_json=False
         )
+
+    def tarea_respuesta_final(self, agente, mensaje_usuario: str, reporte_backoffice: str, datos_faltantes: list, contexto_chat: str, datos_acumulados: dict):
+        """Tarea para generar la respuesta final al cliente."""
+        
+        instruccion_datos_faltantes = ""
+        if datos_faltantes:
+            instruccion_datos_faltantes = f"Faltan estos datos para completar el registro: {', '.join(datos_faltantes)}. Pídelos amablemente."
+
+        return Task(
+            description=(
+                f"Historial de Chat:\n{contexto_chat}\n\n"
+                f"Mensaje actual del cliente: '{mensaje_usuario}'\n"
+                f"DATOS QUE YA CONOCEMOS: {json.dumps(datos_acumulados, ensure_ascii=False)}\n"
+                f"REPORTE DEL EQUIPO TÉCNICO (Lo que se registró en el CRM): {reporte_backoffice}\n\n"
+                f"TU MISIÓN:\n"
+                f"1. Eres un Especialista en Atención al Cliente de Triple Tecnología.\n"
+                f"2. CONFIRMACIÓN: Si el reporte indica éxito en el CRM, confírmalo (ej: 'Ya registré tu empresa y la oportunidad de proyecto').\n"
+                f"3. BASE DE CONOCIMIENTO: Si el cliente tiene dudas técnicas o comerciales, usa 'leer_faqs_empresa' para responder con precisión.\n"
+                f"4. CAPTACIÓN: {instruccion_datos_faltantes}\n"
+                f"5. REGLA DE ORO: Máximo 3 oraciones. Sé cálido, humano y profesional. Evita sonar como un robot."
+            ),
+            expected_output="Una respuesta breve y amable que resuelva la duda y/o confirme las acciones.",
+            agent=agente
+        )
